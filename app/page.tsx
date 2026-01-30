@@ -17,6 +17,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordAvailable, setRecordAvailable] = useState(false);
   const [hasRecordOnPlayer, setHasRecordOnPlayer] = useState(false);
+  const [isDraggingRecord, setIsDraggingRecord] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -63,6 +64,9 @@ export default function Home() {
     if (!recordAvailable || !tracks.length) return;
     e.preventDefault();
 
+    // Hide the record in the drop area
+    setIsDraggingRecord(true);
+
     const needle = document.createElement('img');
     needle.src = '/pixel/needle.png';
     Object.assign(needle.style, {
@@ -98,6 +102,9 @@ export default function Home() {
       needle.remove();
       record.remove();
 
+      // Show record in drop area again
+      setIsDraggingRecord(false);
+
       if (!playerRef.current) return;
 
       const rect = playerRef.current.getBoundingClientRect();
@@ -108,7 +115,6 @@ export default function Home() {
         ev.clientY <= rect.bottom;
 
       if (droppedOnPlayer) {
-        // 🔁 Swap records on the player
         setQueuedTracks(tracks);
         setCurrentTrackIndex(0);
         setRecordAvailable(false);
@@ -185,7 +191,7 @@ export default function Home() {
               `${tracks.length} track${tracks.length === 1 ? '' : 's'}`}
           </p>
 
-          {recordAvailable && (
+          {recordAvailable && !isDraggingRecord && (
             <img
               src="/pixel/record.png"
               className="w-16 h-16 mt-4 cursor-pointer"
