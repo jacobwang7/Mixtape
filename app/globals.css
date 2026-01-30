@@ -24,3 +24,54 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+/* Record spinning */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.record-spinning {
+  animation: spin 2.3s linear infinite;
+}
+
+/* Needle positions */
+.needle-up {
+  transform: rotate(90deg);
+}
+
+.needle-down {
+  transform: rotate(0deg);
+}
+
+@keyframes heart-float {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(0.9);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  60% {
+    transform: translate(calc(var(--drift-x) * 0.6), 45vh) rotate(180deg) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--drift-x), 60vh) rotate(360deg) scale(0.95);
+    opacity: 0;
+  }
+}
+
+.animate-heart-float {
+  animation-name: heart-float;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
+}
