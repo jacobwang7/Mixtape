@@ -52,11 +52,17 @@ export default function Home() {
     }
 
     setTimeout(() => {
+      newTracks.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      );
+
       setTracks(newTracks);
       setRecordAvailable(true); // 🔑 does NOT affect current playback
     }, 300);
   };
-
   // ----------------------------------
   // Drag record → needle follows cursor
   // ----------------------------------
