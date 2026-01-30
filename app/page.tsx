@@ -10,22 +10,23 @@ interface Track {
 }
 
 export default function Home() {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);            // tracks on the loose record
+  const [queuedTracks, setQueuedTracks] = useState<Track[]>([]); // tracks currently playing
+  const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
+
   const [isPlaying, setIsPlaying] = useState(false);
+  const [recordAvailable, setRecordAvailable] = useState(false);
   const [hasRecordOnPlayer, setHasRecordOnPlayer] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  const needleRef = useRef<HTMLImageElement | null>(null);
-  const recordRef = useRef<HTMLImageElement | null>(null);
-
   // ----------------------------------
-  // Folder + MP3 ingestion
+  // Load folder → create a loose record
   // ----------------------------------
   const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     const items = e.dataTransfer.items;
     const newTracks: Track[] = [];
 
@@ -49,17 +50,19 @@ export default function Home() {
       if (entry) await traverse(entry);
     }
 
-    setTimeout(() => setTracks(prev => [...prev, ...newTracks]), 500);
+    setTimeout(() => {
+      setTracks(newTracks);
+      setRecordAvailable(true); // 🔑 does NOT affect current playback
+    }, 300);
   };
 
   // ----------------------------------
   // Drag record → needle follows cursor
   // ----------------------------------
   const startDrag = (e: React.MouseEvent) => {
-    if (!tracks.length) return;
+    if (!recordAvailable || !tracks.length) return;
     e.preventDefault();
 
-    // Needle
     const needle = document.createElement('img');
     needle.src = '/pixel/needle.png';
     Object.assign(needle.style, {
@@ -70,9 +73,7 @@ export default function Home() {
       zIndex: '9999',
     });
     document.body.appendChild(needle);
-    needleRef.current = needle;
 
-    // Record
     const record = document.createElement('img');
     record.src = '/pixel/record.png';
     Object.assign(record.style, {
@@ -83,7 +84,6 @@ export default function Home() {
       zIndex: '9998',
     });
     document.body.appendChild(record);
-    recordRef.current = record;
 
     const move = (ev: MouseEvent) => {
       needle.style.left = ev.pageX + 8 + 'px';
@@ -108,8 +108,12 @@ export default function Home() {
         ev.clientY <= rect.bottom;
 
       if (droppedOnPlayer) {
+        // 🔁 Swap records on the player
+        setQueuedTracks(tracks);
+        setCurrentTrackIndex(0);
+        setRecordAvailable(false);
         setHasRecordOnPlayer(true);
-        playTrack(0);
+        playTrack(tracks, 0);
       }
     };
 
@@ -118,14 +122,14 @@ export default function Home() {
   };
 
   // ----------------------------------
-  // Playback logic
+  // Playback logic (player record only)
   // ----------------------------------
-  const playTrack = (index: number) => {
-    if (!tracks[index] || !audioRef.current) return;
-    setCurrentTrackIndex(index);
-    setIsPlaying(true);
-    audioRef.current.src = URL.createObjectURL(tracks[index].file);
+  const playTrack = (list: Track[], index: number) => {
+    if (!audioRef.current || !list[index]) return;
+    audioRef.current.src = URL.createObjectURL(list[index].file);
     audioRef.current.play();
+    setIsPlaying(true);
+    setCurrentTrackIndex(index);
   };
 
   const togglePlay = () => {
@@ -140,34 +144,33 @@ export default function Home() {
   };
 
   const next = () => {
-    if (!tracks.length || currentTrackIndex === null) return;
-    playTrack((currentTrackIndex + 1) % tracks.length);
+    if (!queuedTracks.length) return;
+    const nextIndex = (currentTrackIndex + 1) % queuedTracks.length;
+    playTrack(queuedTracks, nextIndex);
   };
 
   const prev = () => {
-    if (!tracks.length || currentTrackIndex === null) return;
-    playTrack((currentTrackIndex - 1 + tracks.length) % tracks.length);
+    if (!queuedTracks.length) return;
+    const prevIndex =
+      (currentTrackIndex - 1 + queuedTracks.length) % queuedTracks.length;
+    playTrack(queuedTracks, prevIndex);
   };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-pink-100 gap-6 p-6">
-      
       <FallingHearts active={isPlaying} />
-      <div className="relative z-10">
-        {/* record player + controls */}
-      </div>
-      
-      {/* Playlist */}
+      {/* Drop Area */}
       <div
         onDrop={handleFileDrop}
         onDragOver={e => e.preventDefault()}
         className="w-64 h-64 border-2 border-dashed border-pink-500 rounded-lg flex flex-col items-center justify-center"
       >
-        <h2 className="font-bold text-pink-700">Place Record Here :)</h2>
-        <p className="text-sm text-center mt-2">Drop MP3 folder here</p>
-        <p className="mt-2 text-sm">{tracks.length} track(s)</p>
+        <h2 className="font-bold text-pink-700">Load Records Here :)</h2>
+        <p className="text-sm mt-2">
+          {recordAvailable ? `${tracks.length} track(s)` : 'Ready'}
+        </p>
 
-        {tracks.length > 0 && (
+        {recordAvailable && (
           <img
             src="/pixel/record.png"
             className="w-16 h-16 mt-4 cursor-pointer"
@@ -176,12 +179,9 @@ export default function Home() {
         )}
       </div>
 
-      {/* Player */}
+      {/* Record Player */}
       <div ref={playerRef}>
-        <RecordPlayer
-          isPlaying={isPlaying}
-          hasRecord={hasRecordOnPlayer}
-        />
+        <RecordPlayer isPlaying={isPlaying} hasRecord={hasRecordOnPlayer} />
       </div>
 
       {/* Controls */}
