@@ -160,25 +160,40 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-pink-100 gap-6 p-6">
       <FallingHearts active={isPlaying} />
       {/* Drop Area */}
-      <div
-        onDrop={handleFileDrop}
-        onDragOver={e => e.preventDefault()}
-        className="w-64 h-64 border-2 border-dashed border-pink-500 rounded-lg flex flex-col items-center justify-center"
-      >
-        <h2 className="font-bold text-pink-700">Load Records Here :)</h2>
-        <p className="text-sm mt-2">
-          {recordAvailable ? `${tracks.length} track(s)` : 'Ready'}
-        </p>
+      <div className="fixed top-4 left-4 z-20">
+        <div
+          onDrop={handleFileDrop}
+          onDragOver={e => e.preventDefault()}
+          className="
+            w-40 h-40
+            hover:w-64 hover:h-64
+            border-2 border-dashed border-pink-500
+            rounded-lg
+            flex flex-col items-center justify-center
 
-        {recordAvailable && (
-          <img
-            src="/pixel/record.png"
-            className="w-16 h-16 mt-4 cursor-pointer"
-            onMouseDown={startDrag}
-          />
-        )}
+            transition-all duration-500 ease-out
+            hover:scale-105
+            hover:border-pink-600
+            hover:shadow-lg hover:shadow-pink-300/40
+          "
+        >
+          <h2 className="font-bold text-pink-700 text-sm hover:text-base transition-all">
+            Load Records Here :)
+          </h2>
+          <p className="text-sm mt-2 text-pink-700">
+            {recordAvailable &&
+              `${tracks.length} track${tracks.length === 1 ? '' : 's'}`}
+          </p>
+
+          {recordAvailable && (
+            <img
+              src="/pixel/record.png"
+              className="w-16 h-16 mt-4 cursor-pointer"
+              onMouseDown={startDrag}
+            />
+          )}
+        </div>
       </div>
-
       {/* Record Player */}
       <div ref={playerRef}>
         <RecordPlayer isPlaying={isPlaying} hasRecord={hasRecordOnPlayer} />
@@ -209,6 +224,10 @@ export default function Home() {
       </button>
       </div>
       )}
+
+      <div className="fixed bottom-4 right-4 text-sm text-pink-700 opacity-80 select-none">
+        To Hannah, from Jake ❤️
+      </div>
 
       <audio ref={audioRef} onEnded={next} />
     </main>
